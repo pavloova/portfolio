@@ -5,12 +5,12 @@ Scoring formula:
   score = topic_weight * W_TOPIC
          + tag_overlap  * W_TAG
          + engagement   * W_ENGAGEMENT
-         + recency_bonus* W_RECENCY
   Seen items are excluded; disliked items are heavily penalised.
+
+content / content_map are passed in at call-time so the recommender works
+with both static mock data and dynamically fetched YouTube content.
 """
-import math
 from models import ContentItem, UserProfile
-from data import CONTENT
 
 W_TOPIC      = 0.45
 W_TAG        = 0.30
@@ -46,26 +46,30 @@ def score_item(item: ContentItem, profile: UserProfile) -> float:
     return (topic_w * W_TOPIC + tag_w * W_TAG + eng * W_ENGAGEMENT)
 
 
-def get_feed(profile: UserProfile, limit: int = 10) -> list[ContentItem]:
-    seen     = set(profile.liked_ids) | set(profile.disliked_ids)
-    scored   = []
-    for item in CONTENT:
+def get_feed(
+    profile: UserProfile,
+    content: list[ContentItem],
+    limit: int = 10,
+) -> list[ContentItem]:
+    import random
+    seen   = set(profile.liked_ids) | set(profile.disliked_ids)
+    scored = []
+    for item in content:
         if item.topic not in profile.selected_topics:
             continue
         if item.id in seen:
             continue
-        s = score_item(item, profile)
-        scored.append((s, item))
+        scored.append((score_item(item, profile), item))
 
-    # Sort by score desc; inject a small random tie-breaker for exploration
-    import random
+    # Descending score with a tiny random tie-breaker for exploration
     scored.sort(key=lambda x: x[0] + random.uniform(0, 0.05), reverse=True)
     results = [item for _, item in scored[:limit]]
 
-    # If not enough, fill with unseen items from any selected topic
+    # Pad with unseen items if the scored list was too short
     if len(results) < limit:
-        extras = [i for i in CONTENT
-                  if i.id not in seen and i not in results
+        result_ids = {i.id for i in results}
+        extras = [i for i in content
+                  if i.id not in seen and i.id not in result_ids
                   and i.topic in profile.selected_topics]
         random.shuffle(extras)
         results += extras[: limit - len(results)]
@@ -75,10 +79,14 @@ def get_feed(profile: UserProfile, limit: int = 10) -> list[ContentItem]:
     return results
 
 
-def apply_feedback(profile: UserProfile, content_id: str,
-                   action: str, watch_percent: float | None) -> UserProfile:
-    from data import CONTENT_MAP
-    item = CONTENT_MAP.get(content_id)
+def apply_feedback(
+    profile: UserProfile,
+    content_id: str,
+    action: str,
+    watch_percent: float | None,
+    content_map: dict[str, ContentItem],
+) -> UserProfile:
+    item = content_map.get(content_id)
     if item is None:
         return profile
 
