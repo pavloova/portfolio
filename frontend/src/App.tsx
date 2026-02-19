@@ -2,6 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import type { ContentItem, Topic, Screen } from "./types";
 import { api } from "./api/client";
 
+const DEMO_FEED: ContentItem[] = [
+  { id: "d1", title: "Как работает интернет за 5 минут", creator: "Kurzgesagt", topic: "tech", tags: ["сети","TCP/IP"], duration: 305, views: 12400000, likes: 890000, thumbnail_url: "https://i.ytimg.com/vi/7_LPdttKXPc/hqdefault.jpg", youtube_id: "7_LPdttKXPc", score: 0.95 },
+  { id: "d2", title: "Теория относительности за 7 минут", creator: "TED-Ed", topic: "science", tags: ["физика","Эйнштейн"], duration: 420, views: 8700000, likes: 560000, thumbnail_url: "https://i.ytimg.com/vi/yuD34tEpRFw/hqdefault.jpg", youtube_id: "yuD34tEpRFw", score: 0.92 },
+  { id: "d3", title: "Почему мы прокрастинируем", creator: "TED", topic: "health", tags: ["психология","продуктивность"], duration: 856, views: 55000000, likes: 1900000, thumbnail_url: "https://i.ytimg.com/vi/arj7oStGLkU/hqdefault.jpg", youtube_id: "arj7oStGLkU", score: 0.90 },
+  { id: "d4", title: "Как работает ИИ", creator: "3Blue1Brown", topic: "tech", tags: ["ML","нейросети"], duration: 1200, views: 9800000, likes: 720000, thumbnail_url: "https://i.ytimg.com/vi/aircAruvnKk/hqdefault.jpg", youtube_id: "aircAruvnKk", score: 0.88 },
+  { id: "d5", title: "История денег", creator: "RealLifeLore", topic: "history", tags: ["экономика","деньги"], duration: 730, views: 3200000, likes: 180000, thumbnail_url: "https://i.ytimg.com/vi/YCN2aTlocOw/hqdefault.jpg", youtube_id: "YCN2aTlocOw", score: 0.85 },
+];
+
 const DEMO_TOPICS: Topic[] = [
   { id: "tech",     name: "Technology",  name_ru: "Технологии",  icon: "💻" },
   { id: "science",  name: "Science",     name_ru: "Наука",       icon: "🔬" },
@@ -66,6 +74,7 @@ export default function App() {
       });
     } catch (e) {
       console.error(e);
+      setFeed((prev) => (prev.length === 0 ? DEMO_FEED : prev));
     } finally {
       setLoadingFeed(false);
     }
