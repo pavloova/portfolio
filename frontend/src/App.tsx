@@ -1,6 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
 import type { ContentItem, Topic, Screen } from "./types";
 import { api } from "./api/client";
+
+const DEMO_TOPICS: Topic[] = [
+  { id: "tech",     name: "Technology",  name_ru: "Технологии",  icon: "💻" },
+  { id: "science",  name: "Science",     name_ru: "Наука",       icon: "🔬" },
+  { id: "business", name: "Business",    name_ru: "Бизнес",      icon: "📈" },
+  { id: "design",   name: "Design",      name_ru: "Дизайн",      icon: "🎨" },
+  { id: "history",  name: "History",     name_ru: "История",     icon: "🏛️" },
+  { id: "health",   name: "Health",      name_ru: "Здоровье",    icon: "🧘" },
+  { id: "language", name: "Languages",   name_ru: "Языки",       icon: "🌍" },
+  { id: "math",     name: "Math",        name_ru: "Математика",  icon: "📐" },
+];
 import { useTelegramApp } from "./hooks/useTelegramApp";
 import { FeedScreen } from "./components/FeedScreen";
 import { TopicSelector } from "./components/TopicSelector";
@@ -19,7 +30,7 @@ export default function App() {
 
   // Load topics on mount
   useEffect(() => {
-    api.getTopics().then(setTopics).catch(console.error);
+    api.getTopics().then(setTopics).catch(() => setTopics(DEMO_TOPICS));
     // Try to restore existing profile
     api.getProfile(userId).then((profile: any) => {
       if (profile.selected_topics?.length > 0) {
@@ -77,13 +88,9 @@ export default function App() {
 
   const handleTopicsConfirm = async () => {
     haptic("medium");
-    try {
-      await api.updatePreferences(userId, selectedTopics);
-      setFeed([]);
-      setScreen("feed");
-    } catch (e) {
-      console.error(e);
-    }
+    setFeed([]);
+    setScreen("feed");
+    await api.updatePreferences(userId, selectedTopics).catch(console.error);
   };
 
   const handleLike = async (id: string) => {
