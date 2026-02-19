@@ -23,6 +23,7 @@ export function VideoCard({ item, isActive, onLike, onDislike, onOpen }: Props) 
   const [liked, setLiked]       = useState(false);
   const [disliked, setDisliked] = useState(false);
   const [showFeedback, setShowFeedback] = useState<"like" | "dislike" | null>(null);
+  const [muted, setMuted]       = useState(true);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Reset state when card changes
@@ -30,6 +31,7 @@ export function VideoCard({ item, isActive, onLike, onDislike, onOpen }: Props) 
     setLiked(false);
     setDisliked(false);
     setShowFeedback(null);
+    setMuted(true);
   }, [item.id]);
 
   const flash = (type: "like" | "dislike") => {
@@ -53,22 +55,45 @@ export function VideoCard({ item, isActive, onLike, onDislike, onOpen }: Props) 
   };
 
   const youtubeThumb = `https://img.youtube.com/vi/${item.youtube_id}/hqdefault.jpg`;
+  const embedSrc = `https://www.youtube.com/embed/${item.youtube_id}?autoplay=1&mute=${muted ? 1 : 0}&playsinline=1&controls=0&rel=0&loop=1&playlist=${item.youtube_id}`;
 
   return (
     <div className={`video-card ${isActive ? "active" : ""}`}>
-      {/* Thumbnail */}
-      <div className="video-thumb" onClick={onOpen}>
-        <img
-          src={item.thumbnail_url}
-          alt={item.title}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = youtubeThumb;
-          }}
-          loading="lazy"
-        />
-        <div className="play-overlay">
-          <div className="play-icon">▶</div>
-        </div>
+      {/* Video / Thumbnail */}
+      <div className="video-thumb">
+        {isActive ? (
+          <>
+            <iframe
+              key={`${item.youtube_id}-${muted}`}
+              src={embedSrc}
+              allow="autoplay; encrypted-media; fullscreen"
+              allowFullScreen
+              style={{ width: "100%", height: "100%", border: "none", pointerEvents: "none" }}
+              title={item.title}
+            />
+            <button
+              className="mute-btn"
+              onClick={() => setMuted((m) => !m)}
+              aria-label={muted ? "Включить звук" : "Выключить звук"}
+            >
+              {muted ? "🔇" : "🔊"}
+            </button>
+          </>
+        ) : (
+          <>
+            <img
+              src={item.thumbnail_url}
+              alt={item.title}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = youtubeThumb;
+              }}
+              loading="lazy"
+            />
+            <div className="play-overlay">
+              <div className="play-icon">▶</div>
+            </div>
+          </>
+        )}
         <div className="duration-badge">{formatDuration(item.duration)}</div>
       </div>
 
@@ -99,9 +124,9 @@ export function VideoCard({ item, isActive, onLike, onDislike, onOpen }: Props) 
           <span className="action-label">Скип</span>
         </button>
 
-        <button className="action-btn" onClick={onOpen} aria-label="Открыть">
+        <button className="action-btn" onClick={onOpen} aria-label="Открыть на YouTube">
           <span className="action-icon">▶️</span>
-          <span className="action-label">Смотреть</span>
+          <span className="action-label">YouTube</span>
         </button>
       </div>
 
