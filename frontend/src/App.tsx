@@ -1,13 +1,23 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { ContentItem, Topic, Screen } from "./types";
 import { api } from "./api/client";
 
-const DEMO_FEED: ContentItem[] = [
-  { id: "d1", title: "Как работает интернет за 5 минут", creator: "Kurzgesagt", topic: "tech", tags: ["сети","TCP/IP"], duration: 305, views: 12400000, likes: 890000, thumbnail_url: "https://i.ytimg.com/vi/7_LPdttKXPc/hqdefault.jpg", youtube_id: "7_LPdttKXPc", score: 0.95 },
-  { id: "d2", title: "Теория относительности за 7 минут", creator: "TED-Ed", topic: "science", tags: ["физика","Эйнштейн"], duration: 420, views: 8700000, likes: 560000, thumbnail_url: "https://i.ytimg.com/vi/yuD34tEpRFw/hqdefault.jpg", youtube_id: "yuD34tEpRFw", score: 0.92 },
-  { id: "d3", title: "Почему мы прокрастинируем", creator: "TED", topic: "health", tags: ["психология","продуктивность"], duration: 856, views: 55000000, likes: 1900000, thumbnail_url: "https://i.ytimg.com/vi/arj7oStGLkU/hqdefault.jpg", youtube_id: "arj7oStGLkU", score: 0.90 },
-  { id: "d4", title: "Как работает ИИ", creator: "3Blue1Brown", topic: "tech", tags: ["ML","нейросети"], duration: 1200, views: 9800000, likes: 720000, thumbnail_url: "https://i.ytimg.com/vi/aircAruvnKk/hqdefault.jpg", youtube_id: "aircAruvnKk", score: 0.88 },
-  { id: "d5", title: "История денег", creator: "RealLifeLore", topic: "history", tags: ["экономика","деньги"], duration: 730, views: 3200000, likes: 180000, thumbnail_url: "https://i.ytimg.com/vi/YCN2aTlocOw/hqdefault.jpg", youtube_id: "YCN2aTlocOw", score: 0.85 },
+const DEMO_POOL: ContentItem[] = [
+  { id: "d1",  title: "Как работает интернет за 5 минут",   creator: "Kurzgesagt",   topic: "tech",    tags: ["сети","TCP/IP"],          duration: 305,  views: 12400000, likes: 890000,  thumbnail_url: "https://i.ytimg.com/vi/7_LPdttKXPc/hqdefault.jpg",  youtube_id: "7_LPdttKXPc",  score: 0.95 },
+  { id: "d2",  title: "Теория относительности за 7 минут",  creator: "TED-Ed",       topic: "science", tags: ["физика","Эйнштейн"],        duration: 420,  views: 8700000,  likes: 560000,  thumbnail_url: "https://i.ytimg.com/vi/yuD34tEpRFw/hqdefault.jpg",  youtube_id: "yuD34tEpRFw",  score: 0.92 },
+  { id: "d3",  title: "Почему мы прокрастинируем",          creator: "TED",          topic: "health",  tags: ["психология","продуктивность"], duration: 856, views: 55000000, likes: 1900000, thumbnail_url: "https://i.ytimg.com/vi/arj7oStGLkU/hqdefault.jpg",  youtube_id: "arj7oStGLkU",  score: 0.90 },
+  { id: "d4",  title: "Как работает ИИ",                    creator: "3Blue1Brown",  topic: "tech",    tags: ["ML","нейросети"],           duration: 1200, views: 9800000,  likes: 720000,  thumbnail_url: "https://i.ytimg.com/vi/aircAruvnKk/hqdefault.jpg",  youtube_id: "aircAruvnKk",  score: 0.88 },
+  { id: "d5",  title: "История денег",                      creator: "RealLifeLore", topic: "history", tags: ["экономика","деньги"],        duration: 730,  views: 3200000,  likes: 180000,  thumbnail_url: "https://i.ytimg.com/vi/YCN2aTlocOw/hqdefault.jpg",  youtube_id: "YCN2aTlocOw",  score: 0.85 },
+  { id: "d6",  title: "Чёрные дыры объяснены",              creator: "Kurzgesagt",   topic: "science", tags: ["космос","физика"],           duration: 480,  views: 23000000, likes: 1400000, thumbnail_url: "https://i.ytimg.com/vi/e-P5IFTqB98/hqdefault.jpg",  youtube_id: "e-P5IFTqB98",  score: 0.87 },
+  { id: "d7",  title: "Как выучить любой язык",             creator: "Lýdie Barani", topic: "language",tags: ["языки","обучение"],          duration: 652,  views: 6100000,  likes: 320000,  thumbnail_url: "https://i.ytimg.com/vi/HZqUeWshwMs/hqdefault.jpg",  youtube_id: "HZqUeWshwMs",  score: 0.86 },
+  { id: "d8",  title: "Мозг во сне",                        creator: "SciShow",      topic: "health",  tags: ["сон","мозг"],                duration: 540,  views: 4500000,  likes: 210000,  thumbnail_url: "https://i.ytimg.com/vi/i2vEBMmArxo/hqdefault.jpg",  youtube_id: "i2vEBMmArxo",  score: 0.84 },
+  { id: "d9",  title: "Визуализация сортировок",            creator: "AlgoVision",   topic: "tech",    tags: ["алгоритмы","код"],           duration: 290,  views: 2800000,  likes: 190000,  thumbnail_url: "https://i.ytimg.com/vi/kPRA0W1kECg/hqdefault.jpg",  youtube_id: "kPRA0W1kECg",  score: 0.83 },
+  { id: "d10", title: "Краткая история Вселенной",          creator: "PBS Space Time",topic: "science",tags: ["космология","Big Bang"],     duration: 810,  views: 7200000,  likes: 430000,  thumbnail_url: "https://i.ytimg.com/vi/HdPzOWlLrbE/hqdefault.jpg",  youtube_id: "HdPzOWlLrbE",  score: 0.82 },
+  { id: "d11", title: "Как работает биткоин",               creator: "3Blue1Brown",  topic: "tech",    tags: ["крипто","блокчейн"],         duration: 924,  views: 10300000, likes: 680000,  thumbnail_url: "https://i.ytimg.com/vi/bBC-nXj3Ng4/hqdefault.jpg",  youtube_id: "bBC-nXj3Ng4",  score: 0.81 },
+  { id: "d12", title: "Стоицизм за 5 минут",                creator: "SciShow Psych",topic: "health",  tags: ["философия","психология"],    duration: 360,  views: 3100000,  likes: 175000,  thumbnail_url: "https://i.ytimg.com/vi/R9OCA6UFE-0/hqdefault.jpg",  youtube_id: "R9OCA6UFE-0",  score: 0.80 },
+  { id: "d13", title: "Как мозг учится",                    creator: "Sprouts",      topic: "health",  tags: ["нейронауки","обучение"],     duration: 415,  views: 5600000,  likes: 290000,  thumbnail_url: "https://i.ytimg.com/vi/X96oQs4gBk8/hqdefault.jpg",  youtube_id: "X96oQs4gBk8",  score: 0.79 },
+  { id: "d14", title: "История холодной войны",             creator: "Overly Sarcastic", topic: "history", tags: ["история","политика"],  duration: 990,  views: 4800000,  likes: 260000,  thumbnail_url: "https://i.ytimg.com/vi/I79TpDe3t2g/hqdefault.jpg",  youtube_id: "I79TpDe3t2g",  score: 0.78 },
+  { id: "d15", title: "Квантовые вычисления за 8 минут",    creator: "Kurzgesagt",   topic: "tech",    tags: ["квантовые","вычисления"],    duration: 490,  views: 14600000, likes: 910000,  thumbnail_url: "https://i.ytimg.com/vi/JhHMJCUmq28/hqdefault.jpg",  youtube_id: "JhHMJCUmq28",  score: 0.77 },
 ];
 
 const DEMO_TOPICS: Topic[] = [
@@ -26,6 +36,8 @@ import { TopicSelector } from "./components/TopicSelector";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { BottomNav } from "./components/BottomNav";
 
+const DEMO_BATCH = 5;
+
 export default function App() {
   const { userId, haptic, hapticNotify } = useTelegramApp();
 
@@ -35,6 +47,7 @@ export default function App() {
   const [feed, setFeed]                   = useState<ContentItem[]>([]);
   const [loadingFeed, setLoadingFeed]     = useState(false);
   const [stats, setStats]                 = useState({ liked: 0, disliked: 0, topTags: [] as [string, number][] });
+  const demoOffset = useRef(0);
 
   // Load topics on mount
   useEffect(() => {
@@ -74,7 +87,15 @@ export default function App() {
       });
     } catch (e) {
       console.error(e);
-      setFeed((prev) => (prev.length === 0 ? DEMO_FEED : prev));
+      const offset = demoOffset.current % DEMO_POOL.length;
+      const batch = [...DEMO_POOL, ...DEMO_POOL]
+        .slice(offset, offset + DEMO_BATCH)
+        .map((item, i) => ({ ...item, id: `${item.id}_${demoOffset.current + i}` }));
+      demoOffset.current += DEMO_BATCH;
+      setFeed((prev) => {
+        const existingIds = new Set(prev.map((i) => i.id));
+        return [...prev, ...batch.filter((i) => !existingIds.has(i.id))];
+      });
     } finally {
       setLoadingFeed(false);
     }
@@ -98,6 +119,7 @@ export default function App() {
   const handleTopicsConfirm = async () => {
     haptic("medium");
     setFeed([]);
+    demoOffset.current = 0;
     setScreen("feed");
     await api.updatePreferences(userId, selectedTopics).catch(console.error);
   };
@@ -121,6 +143,7 @@ export default function App() {
     // Re-init profile by updating preferences (backend creates fresh weights)
     await api.updatePreferences(userId, selectedTopics).catch(console.error);
     setFeed([]);
+    demoOffset.current = 0;
     setStats({ liked: 0, disliked: 0, topTags: [] });
     await loadFeed();
   };
